@@ -8,10 +8,10 @@ You are an expert software engineer tasked with fixing the failing CI checks on 
 
 Before running anything, load the skills you will need:
 
-- Load the `github-cli` skill for `gh` command usage (PRs, checks, workflow runs, logs).
 - Load the `test-running` skill for how to run and troubleshoot Jest in this monorepo.
 - Load the `lint-running` skill if any failing check is a lint check.
 - Use the `nx-project-for-file` tool to resolve the owning Nx project (and the exact typecheck/lint/test command) for any file you need to run locally. Do NOT hand-roll `nx graph`/`jq`.
+- **Prefer the `ci-failures` tool** (available in the Commons repo's project tools) to pull the failing checks and their failure-log excerpts in one call. It collapses Phases 2–3 below — check discovery, run/job-id parsing, `gh run view --log-failed`, the reusable-workflow raw-log fallback, and the failure grep — into a single deterministic call. Load the `github-cli` skill only if you need to fall back to raw `gh` commands (e.g. working outside the Commons repo where the tool isn't available).
 
 ## Phase 1: Discover the PR
 
@@ -32,50 +32,32 @@ If no PR is found, inform the user and stop.
 
 Store the PR number for use in subsequent phases.
 
-## Phase 2: Identify the failing checks
+## Phase 2 + 3: Identify failing checks and pull their logs
 
-List the checks and isolate the failures. Prefer JSON so you can filter reliably on the `bucket` field (`pass`, `fail`, `pending`, `skipping`, `cancel`):
+**Call the `ci-failures` tool** — pass the PR number from Phase 1 (or no argument to auto-detect from the current branch). It returns each failing check with `name`, `workflow`, `link`, the path to the full captured log, and a grepped failure excerpt (`FAIL |✕|✗|Expected|Received|Error:`), handling both check-link formats, per-job resolution, and the reusable-workflow raw-log fallback automatically.
 
-```bash
-gh pr checks PR_NUMBER --json name,state,bucket,link,workflow
-```
+- If it reports **no failing checks**, everything is green — stop. It also notes any still-`pending` checks; if a relevant check is pending, tell the user and ask whether to wait (`gh pr checks PR_NUMBER --watch`) or proceed with only the currently-failed ones.
+- From each excerpt, extract for each failure:
+  - The failing **test file(s)** and individual test names, plus the assertion/error output, OR
+  - For lint/typecheck: the offending file(s), rule/error codes, and line numbers.
+- For a deeper look, read the full log at the path the tool prints (captured under `/Users/jacob.waldrip/tmp/opencode/`).
 
-Replace `PR_NUMBER` with the number from Phase 1.
+### Fallback (only if the `ci-failures` tool is unavailable — e.g. outside the Commons repo)
 
-- Keep only checks where `bucket == "fail"`.
-- If any relevant checks are still `pending`, tell the user they are not done yet; ask whether to wait (`gh pr checks PR_NUMBER --watch`) or proceed with only the currently-failed checks.
-- If there are zero failing checks, inform the user everything is green and stop.
-
-For each failing check, note its `name`, `workflow`, and `link` (the `link` points at the workflow run / job).
-
-## Phase 3: Pull the failing logs
-
-For each failing check, map it to its workflow run and fetch only the failing output:
+Load the `github-cli` skill and run the sequence manually:
 
 ```bash
-# From the run link, extract the run ID (the numeric segment after /runs/).
-gh run view <run-id> --log-failed
+gh pr checks PR_NUMBER --json name,state,bucket,link,workflow   # keep bucket == "fail"
+gh run view <run-id> --log-failed                                # run-id = numeric segment after /runs/
 ```
-- To narrow to a single job, first `gh run view <run-id>` to list jobs, then
-  `gh run view <run-id> --job <job-id> --log-failed`.
-- **Reusable / nested workflows (common here — e.g. `unit_test (jest-N)` calls `module-unit-tests.yml`):**
-  `gh run view --job <id> --log-failed` (and `--log`) often returns only the ~25-line CALLER setup shell,
-  NOT the real test output. When the log looks suspiciously short (tens of lines, all "Prepare/Download
-  action"), do NOT retry the same command — fetch the raw job log archive directly via the API:
-
+- Narrow to one job: `gh run view <run-id> --job <job-id> --log-failed`.
+- **Reusable / nested workflows** (e.g. `unit_test (jest-N)`): if the log is suspiciously short (~25 lines, all "Prepare/Download action"), fetch the raw archive instead:
   ```bash
-  # Resolve the failing job id (filter the shard name), then pull its raw log archive.
   gh api repos/{owner}/{repo}/actions/runs/<run-id>/jobs --paginate \
     -q '.jobs[] | select(.conclusion=="failure") | {id, name}'
   gh api repos/{owner}/{repo}/actions/jobs/<job-id>/logs > /Users/jacob.waldrip/tmp/opencode/ci-fail.log
   ```
-
-- The log can be large. Do NOT eyeball truncated terminal output — capture it to a temp file under
-  `/Users/jacob.waldrip/tmp/opencode/` and `grep -nE "FAIL |✕|✗|Expected|Received|Error:"` to extract specifics.
-
-From the logs, extract for each failure:
-- The failing **test file(s)** and individual test names, plus the assertion/error output and stack trace, OR
-- For lint/typecheck: the offending file(s), rule/error codes, and line numbers.
+- Capture to a temp file and `grep -nE "FAIL |✕|✗|Expected|Received|Error:"` to extract specifics.
 
 ## Phase 4: Reproduce locally
 

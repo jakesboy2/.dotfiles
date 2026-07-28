@@ -6,106 +6,21 @@ You are an expert software engineer tasked with addressing inline review comment
 
 ## Phase 1: Discover the Stack
 
-### Step 1a: Map the stack
+**Call the `stack-map` tool.** It returns the current Graphite stack as an ordered bottom→top list, with each branch's parent and PR number/URL — no manual `gt` navigation or output-parsing needed. Use this ordered branch list (with PR numbers) for the rest of the workflow.
 
-Run `gt ls --stack` to identify all branches in the current stack. Parse the output to build an ordered list of branch names from bottom (closest to trunk) to top.
-
-If `gt ls --stack` output is ambiguous, supplement with `gt log --stack` to clarify the ordering and parent-child relationships.
-
-### Step 1b: Navigate to the bottom
-
-```bash
-gt bottom
-```
-
-Record the current branch name — this is the bottom of the stack.
-
-### Step 1c: Build the branch list
-
-Starting from the bottom, traverse upward with `gt up` to confirm the ordered list of branches. At each branch, record the branch name. When `gt up` fails (you've reached the top), the traversal is complete.
-
-After mapping, navigate back to the bottom:
-
-```bash
-gt bottom
-```
+> Fallback (only if the `stack-map` tool is unavailable — e.g. outside the Commons repo): run `gt ls --stack` (supplement with `gt log --stack` for parent/child clarity), then walk `gt bottom` + `gt up` to confirm the ordered list.
 
 ## Phase 2: Collect All Unresolved Comments Across the Stack
 
-### Step 2a: Load the github-cli skill
+For each branch in the ordered list from Phase 1 (bottom to top), that has a PR number:
 
-Load the `github-cli` skill for reference on `gh` command usage.
+**Call the `pr-review-threads` tool with that branch's PR number.** It returns the unresolved threads already bucketed into **BugBot (cursor[bot])** vs. **Human reviewers**, each with `path:line`, a truncated body, and full thread bodies in the trailer. No checkout, GraphQL, filtering, or bucketing needed — you do not need to be on the branch to fetch its comments.
 
-### Step 2b: For each branch, detect its PR and fetch comments
+- If a branch has no PR number in the `stack-map` output, note it and skip.
+- Tag each returned thread with its owning branch + PR number as you collect them.
+- If there are **zero unresolved comments across the entire stack**, inform the user and stop.
 
-For each branch in the ordered list (bottom to top):
-
-1. Check out the branch:
-
-```bash
-gt checkout BRANCH_NAME
-```
-
-2. Detect the PR number for this branch:
-
-```bash
-gh pr view --json number,url --jq '{number,url}'
-```
-
-If no PR exists for this branch, note it and skip to the next branch.
-
-3. Fetch unresolved inline review threads using the GitHub GraphQL API:
-
-```bash
-gh api graphql --paginate -F owner='{owner}' -F name='{repo}' -F pr=PR_NUMBER -f query='
-  query($owner: String!, $name: String!, $pr: Int!, $endCursor: String) {
-    repository(owner: $owner, name: $name) {
-      pullRequest(number: $pr) {
-        reviewThreads(first: 100, after: $endCursor) {
-          pageInfo { hasNextPage endCursor }
-          nodes {
-            isResolved
-            isOutdated
-            path
-            line
-            comments(first: 50) {
-              nodes {
-                id
-                body
-                author { login }
-                createdAt
-                url
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-'
-```
-
-Replace `PR_NUMBER` with the actual PR number.
-
-4. Filter to threads where `isResolved` is `false`.
-
-5. For each unresolved thread, collect:
-   - The branch name
-   - The PR number
-   - The file path (`path`)
-   - The line number (`line`)
-   - The full thread of comments (all `comments.nodes`), preserving order
-   - The author of the initial comment (`comments.nodes[0].author.login`)
-
-### Step 2c: Categorize by source within each branch
-
-For each branch, group its unresolved threads into:
-- **BugBot (cursor[bot])**: Threads where the initial comment author is `cursor[bot]`
-- **Human reviewers**: All other threads
-
-### Step 2d: Handle empty stacks
-
-If there are zero unresolved comments across the entire stack, inform the user and stop.
+> Fallback (only if the `pr-review-threads` tool is unavailable): load the `github-cli` skill and, per branch, run `gh api graphql --paginate` with the `reviewThreads` query, filter `isResolved == false`, and bucket by `comments.nodes[0].author.login == "cursor[bot]"`.
 
 ## Phase 3: Present Summary & Let User Pick
 

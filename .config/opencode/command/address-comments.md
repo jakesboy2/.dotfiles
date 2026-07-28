@@ -25,13 +25,14 @@ Store the PR number for use in subsequent phases.
 
 ## Phase 2: Fetch Unresolved Inline Review Comments
 
-### Step 2a: Load the github-cli skill
+**Call the `pr-review-threads` tool** — pass the PR number from Phase 1 (or no argument to auto-detect from the current branch). It runs the paginated GraphQL `reviewThreads` query, keeps only unresolved threads, and returns them already numbered and bucketed into **BugBot (cursor[bot])** vs. **Human reviewers**, each with `path:line`, a truncated body, and (in the trailer) the full thread bodies for context when fixing.
 
-Load the `github-cli` skill for reference on `gh` command usage.
+- If it reports **zero unresolved comments**, inform the user and stop.
+- The tool's output already matches the presentation format used in Phase 3, so you can present it with minimal reformatting.
 
-### Step 2b: Get review threads with resolution status
+### Fallback (only if the `pr-review-threads` tool is unavailable — e.g. outside the Commons repo)
 
-Use the GitHub GraphQL API to fetch all review threads, their resolution status, and their comments. This gives us everything in one call — thread resolution status and full comment bodies with file/line info:
+Load the `github-cli` skill and run the query manually, then filter to `isResolved == false` and bucket by `comments.nodes[0].author.login == "cursor[bot]"`:
 
 ```bash
 gh api graphql --paginate -F owner='{owner}' -F name='{repo}' -F pr=PR_NUMBER -f query='
@@ -41,19 +42,8 @@ gh api graphql --paginate -F owner='{owner}' -F name='{repo}' -F pr=PR_NUMBER -f
         reviewThreads(first: 100, after: $endCursor) {
           pageInfo { hasNextPage endCursor }
           nodes {
-            isResolved
-            isOutdated
-            path
-            line
-            comments(first: 50) {
-              nodes {
-                id
-                body
-                author { login }
-                createdAt
-                url
-              }
-            }
+            isResolved isOutdated path line
+            comments(first: 50) { nodes { id body author { login } createdAt url } }
           }
         }
       }
@@ -61,24 +51,6 @@ gh api graphql --paginate -F owner='{owner}' -F name='{repo}' -F pr=PR_NUMBER -f
   }
 '
 ```
-
-Replace `PR_NUMBER` with the actual PR number obtained in Phase 1.
-
-### Step 2c: Filter to unresolved threads only
-
-From the GraphQL response, keep only threads where `isResolved` is `false`. For each unresolved thread, collect:
-- The file path (`path`)
-- The line number (`line`)
-- The full thread of comments (all `comments.nodes`), preserving order
-- The author of the initial comment (`comments.nodes[0].author.login`)
-
-### Step 2d: Categorize by source
-
-Group the unresolved threads into two categories:
-- **BugBot (cursor[bot])**: Threads where the initial comment author is `cursor[bot]`
-- **Human reviewers**: All other threads
-
-If there are zero unresolved comments, inform the user and stop.
 
 ## Phase 3: Present Summary & Let User Pick
 

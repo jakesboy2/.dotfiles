@@ -120,6 +120,8 @@ gt sync
 | `gt children` | Show child branches | |
 | `gt trunk` | Show trunk branch | `-a/--all` |
 
+> **Prefer the `stack-map` tool** to read the whole stack programmatically. Instead of parsing `gt log`/`gt ls` output by hand, call `stack-map` to get the ordered bottom→top branch list with each branch's parent, PR number/URL, and ready-to-use `git diff {parent}...{branch}` specs. Use the raw `gt log`/`gt ls` commands above only for interactive inspection or as a fallback.
+
 ### Stack Management
 
 | Command | Description | Key Flags |

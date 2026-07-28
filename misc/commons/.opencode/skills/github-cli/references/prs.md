@@ -50,11 +50,15 @@ gh api repos/{owner}/{repo}/pulls/<NUMBER>/files --jq '.[].filename'
 gh pr checks <NUMBER>
 ```
 
+> To triage **failing** checks with their log excerpts in one step, prefer the **`ci-failures`** project tool instead of parsing `gh pr checks` + fetching logs by hand.
+
 ## Get PR review comments
 
 ```bash
 gh api repos/{owner}/{repo}/pulls/<NUMBER>/comments
 ```
+
+> To get only the **unresolved** review threads, already bucketed into BugBot vs. human reviewers, prefer the **`pr-review-threads`** project tool instead of the raw comments/reviews endpoints below.
 
 ## Get PR reviews
 

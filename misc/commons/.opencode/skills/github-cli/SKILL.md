@@ -58,3 +58,12 @@ Placeholders `{owner}` and `{repo}` in `gh api` endpoints are filled from the cu
 | Search (issues, PRs, repos, code) | `gh search`         | [references/search.md](references/search.md) |
 
 Open the linked file for the specific commands and flags.
+
+## Prefer project tools for two common workflows
+
+Two deterministic project tools wrap fiddly `gh` sequences — use them instead of hand-rolling the commands:
+
+- **`pr-review-threads`** — fetch a PR's UNRESOLVED review threads, already filtered and bucketed into BugBot (`cursor[bot]`) vs. human reviewers. Replaces the paginated `gh api graphql` `reviewThreads` query + jq filtering. (Drives the address-comments / address-stack-comments workflows.)
+- **`ci-failures`** — for a PR, return the failing checks with extracted failure-log excerpts. Replaces `gh pr checks --json` + run/job-id parsing + `gh run view --log-failed` + the reusable-workflow raw-log fallback + failure grep. (Drives the fix-ci workflow.)
+
+Fall back to the raw `gh` commands below only if these tools are unavailable (e.g. working outside the Commons repo).

@@ -6,9 +6,9 @@ You are reviewing a Graphite stack from bottom to top. Your goal is to provide i
 
 ## Phase 1: Discover the Stack
 
-Run `gt ls` to identify all branches in the current stack. Parse the output to build an ordered list from trunk (bottom) to top.
+**Call the `stack-map` tool.** It returns the stack as an ordered bottom→top list with each branch's parent, PR number, and ready-to-use `git diff {parent}...{branch}` specs — no manual `gt ls`/`gt log` parsing needed. Use its output directly to drive the per-branch reviews below.
 
-If `gt ls` doesn't provide parent information, use `gt log` or inspect the branch structure to determine the parent of each branch.
+> Fallback (only if the `stack-map` tool is unavailable — e.g. outside the Commons repo): run `gt ls` (supplement with `gt log` for parent info) and parse the ordered trunk→top list yourself.
 
 ## Phase 2: Parallel Branch Reviews
 
