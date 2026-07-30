@@ -7,7 +7,7 @@ description: How to use and add DataLoaders in the Commons backend. Use when imp
 
 Use this skill when you need to **use** DataLoaders (usage is below) or **add** a new one (see [creating-loaders.md](creating-loaders.md)).
 
-For **when** to use dataloaders in GraphQL (e.g. to fix N+1 in resolvers), see the [graphql-query-efficiency](.cursor/skills/graphql-query-efficiency/SKILL.md) skill.
+For **when** to use dataloaders in GraphQL (e.g. to fix N+1 in resolvers), see [docs/dataloaders.md](../../docs/dataloaders.md) and the "Anti-patterns" section below.
 
 ## What DataLoaders do
 

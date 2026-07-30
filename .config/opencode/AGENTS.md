@@ -40,3 +40,8 @@ When running validation commands (typecheck, tests, build), if failures occur:
 ## Grepping and Searching
 - AWLAYS try to use the `grep` tool first
     - If you must search from bash, ALWAYS choose `rg` (ripgrep) over `grep`
+
+## Code Comments
+- Default to **minimal comments**; lean toward removal.
+- **Never add ticket-reference or "why-I-changed-this" comments** (e.g. `// GROW-123: ...`). Rationale for a change belongs in the commit message / PR description, not the code.
+- Keep a comment only for a genuinely non-obvious invariant that the code cannot express. When in doubt, leave it out. Do not add a comment just because a plan suggested one.

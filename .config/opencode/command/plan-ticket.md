@@ -123,3 +123,4 @@ Keep the plan precise and prescriptive — you have the context now, the impleme
 - Always research (Steps 2–3) and load relevant skills (Step 4) BEFORE grilling the user (Step 5).
 - Run agents of the same type in parallel within a step, and wait for them to finish before the next step.
 - The plan is presented inline — do not write it to a file.
+- **Do NOT prescribe code comments in the plan.** Never instruct the implementer to add explanatory / "why" / ticket-reference comments (this violates the repo's minimal-comments rule). "Patterns to Follow" should reference existing code and shapes, not mandate new comments. If a genuinely non-obvious invariant exists, note it in the plan prose for the human — not as a comment to be written into the code.
