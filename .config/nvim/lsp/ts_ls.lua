@@ -18,7 +18,8 @@ return {
     },
   },
 
-  cmd = { 'typescript-language-server', '--stdio' },
+  -- cmd = { 'typescript-language-server', '--stdio' },
+  cmd = { 'tsgo', '--lsp', '--stdio' },
 
   filetypes = {
     'javascript',

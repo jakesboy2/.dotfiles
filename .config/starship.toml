@@ -1,0 +1,99 @@
+# Starship prompt config
+# Migrated from Powerlevel10k (lean style). Icons assume a Nerd Font v3.
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# Blank line before each prompt (matches p10k PROMPT_ADD_NEWLINE=true).
+add_newline = true
+
+# Keep the prompt inline: info stays to the left of the cursor instead of on
+# its own line. This drops the default $line_break before $character.
+format = """
+$directory\
+$git_commit\
+$git_state\
+$git_status\
+$docker_context\
+$package\
+$aws\
+$kubernetes\
+$direnv\
+$cmd_duration\
+$jobs\
+$character"""
+
+# Prompt symbol: green on success, red on error, and vi-cmd mode arrow.
+[character]
+success_symbol = '[❯](bold green)'
+error_symbol = '[❯](bold red)'
+vimcmd_symbol = '[❮](bold green)'
+
+# Current directory.
+[directory]
+truncation_length = 3
+truncate_to_repo = true
+style = 'bold cyan'
+
+# Branch name removed from the prompt.
+[git_branch]
+disabled = true
+
+# Git status. Defaults already mirror the p10k formatter:
+# ⇡ ahead, ⇣ behind, * stash, + staged, ! modified, ? untracked.
+[git_status]
+style = 'bold yellow'
+
+# Show duration of the last command if it took >= 3s (p10k threshold).
+[cmd_duration]
+min_time = 3000
+style = 'bold 101'
+
+# Background jobs indicator.
+[jobs]
+style = 'bold green'
+
+# direnv is disabled by default in starship; p10k showed it.
+[direnv]
+disabled = false
+style = 'bold 178'
+
+# Language / tooling modules disabled: they each spawn a version subprocess
+# (e.g. `node --version`) every prompt, which is slow. Removed from the prompt.
+[nodejs]
+disabled = true
+
+[python]
+disabled = true
+
+[rust]
+disabled = true
+
+[golang]
+disabled = true
+
+[ruby]
+disabled = true
+
+[terraform]
+disabled = true
+
+# Cloud + context.
+[aws]
+style = 'bold yellow'
+
+[kubernetes]
+disabled = false
+style = 'bold blue'
+
+# p10k did not show the package.json version segment.
+[package]
+disabled = true
+
+# User / host / gcloud account removed from the prompt.
+[username]
+disabled = true
+
+[hostname]
+disabled = true
+
+[gcloud]
+disabled = true

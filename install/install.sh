@@ -138,13 +138,13 @@ else
   echo "Wezterm found ☑"
 fi
 
-# p10k
-if ! brew ls --versions powerlevel10k > /dev/null;
+# Starship prompt
+if ! command -v starship &> /dev/null
 then
-  echo "p10k not found, installing via homebrew"
-  brew install powerlevel10k
+  echo "Starship not found, installing via homebrew"
+  brew install starship
 else
-  echo "p10k found ☑"
+  echo "Starship found ☑"
 fi
 
 

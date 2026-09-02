@@ -1,2 +1,3 @@
 this-env.sh
 .DS_Store
+zsh/scripts/deploy-companion

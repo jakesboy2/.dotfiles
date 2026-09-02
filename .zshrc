@@ -1,18 +1,9 @@
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-# Initialization code that may require console input (password prompts, [y/n]
-# confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
-
 # Set path for mac vs linux
 if [[ "$(uname)" == "Darwin" ]]; then
   export package_path="$(brew --prefix)"
-  export powerlevel_path="$(brew --prefix)/share"
   export opencode_path="$HOME/.opencode/bin"
 else
   package_path="/usr/share"
-  powerlevel_path="$HOME"
   opencode_path="/home/jacob/.opencode/bin"
 fi
 
@@ -29,9 +20,8 @@ for f in $ZDIR/plugins/*; do
   source $f
 done
 
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-source $powerlevel_path/powerlevel10k/powerlevel10k.zsh-theme
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+# Prompt. To customize, edit ~/.config/starship.toml.
+eval "$(starship init zsh)"
 
 # Better history setup
 HISTFILE=$HOME/.zhistory
@@ -67,3 +57,6 @@ export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
 . "$HOME/.local/bin/env"
+
+# Deduplicate PATH entries (keep first occurrence, preserve order)
+typeset -U path PATH
